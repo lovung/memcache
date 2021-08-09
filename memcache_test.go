@@ -6,7 +6,7 @@ import (
 )
 
 func TestFull(t *testing.T) {
-	mc := NewCache()
+	mc := NewCache[string, string]()
 	mc.SetUntil("key", "value", 0)
 	mc.Set("key", "value")
 	v := mc.Get("key")
@@ -48,7 +48,7 @@ func TestFull(t *testing.T) {
 }
 
 func BenchmarkSet(b *testing.B) {
-	mc := NewCache()
+	mc := NewCache[string, string]()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		mc.Set("key", "value")
@@ -56,7 +56,7 @@ func BenchmarkSet(b *testing.B) {
 }
 
 func BenchmarkGet(b *testing.B) {
-	mc := NewCache()
+	mc := NewCache[string, string]()
 	mc.Set("key", "value")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -65,7 +65,7 @@ func BenchmarkGet(b *testing.B) {
 }
 
 func BenchmarkSetTake(b *testing.B) {
-	mc := NewCache()
+	mc := NewCache[string, string]()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		mc.Set("key", "value")
@@ -74,7 +74,7 @@ func BenchmarkSetTake(b *testing.B) {
 }
 
 func BenchmarkSetGetDel(b *testing.B) {
-	mc := NewCache()
+	mc := NewCache[string, string]()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		mc.Set("key", "value")

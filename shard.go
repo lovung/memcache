@@ -2,19 +2,19 @@ package memcache
 
 import "time"
 
-type shard struct {
-	hashmap map[string]item
+type shard[K Stringer, V any] struct {
+	hashmap map[K]V
 	// cache   *cache // use if neccessary
 }
 
-func (s *shard) set(k string, v interface{}, d time.Duration) {
+func (s *shard[K Stringer, V any]) set(k K, v V, d time.Duration) {
 	s.hashmap[k] = item{
 		value:     v,
 		expiredAt: time.Now().Add(d),
 	}
 }
 
-func (s *shard) get(k string) interface{} {
+func (s *shard[K Stringer, V any]) get(k K) V {
 	item, ok := s.hashmap[k]
 	if !ok {
 		return nil
@@ -26,7 +26,7 @@ func (s *shard) get(k string) interface{} {
 	return item.value
 }
 
-func (s *shard) take(k string) interface{} {
+func (s *shard[K Stringer, V any]) take(k K) V {
 	item, ok := s.hashmap[k]
 	if !ok {
 		return nil
@@ -38,6 +38,6 @@ func (s *shard) take(k string) interface{} {
 	return item.value
 }
 
-func (s *shard) delete(k string) {
+func (s *shard[K Stringer, V any]) delete(k K) {
 	delete(s.hashmap, k)
 }
