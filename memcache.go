@@ -11,35 +11,32 @@ const (
 	mask                     = 255 // 0xFF
 )
 
-// Cache represent the cache interface
-type Cache interface {
-	Set(key string, value interface{})
-	SetUntil(key string, value interface{}, d time.Duration)
-	Get(key string) interface{}
-	Take(key string) interface{}
-	Del(key string)
+type Stringer interface {
+	~string
 }
 
-type cache struct {
-	shards [defaultNumberOfShard]shard
+// Cache represent the memory cache
+type Cache[K Stringer, V any] struct {
+	shards [defaultNumberOfShard]shard[K, V]
 	mu     [defaultNumberOfShard]sync.Mutex
 }
 
-type item struct {
+type item[V any] struct {
 	expiredAt time.Time
-	value     interface{}
+	value     V
 }
 
 // NewCache creates a memory cache
-func NewCache() Cache {
-	newCache := cache{}
+func NewCache[K Stringer, V any]() Cache[K,V] {
+	newCache := Cache[K, V]{}
 	for i := range newCache.shards {
-		newCache.shards[i].hashmap = make(map[string]item)
+		newCache.shards[i].hashmap = make(map[K]item[V])
 	}
 	return &newCache
 }
 
-func (c *cache) Set(key string, value interface{}) {
+// Set the value with the key
+func (c *Cache[K Stringer, V any]) Set(key K, value V) {
 	hashKey := hashString(key)
 	shardIdx := hashKey & mask
 	c.mu[shardIdx].Lock()
@@ -47,7 +44,7 @@ func (c *cache) Set(key string, value interface{}) {
 	c.shards[shardIdx].set(key, value, defaultTimeout)
 }
 
-func (c *cache) SetUntil(key string, value interface{}, d time.Duration) {
+func (c *Cache[K Stringer, V any]) SetUntil(key K, value V, d time.Duration) {
 	if d <= 0 {
 		return
 	}
@@ -58,7 +55,7 @@ func (c *cache) SetUntil(key string, value interface{}, d time.Duration) {
 	c.mu[shardIdx].Unlock()
 }
 
-func (c *cache) Get(key string) (value interface{}) {
+func (c *Cache[K Stringer, V any]) Get(key K) (value V) {
 	hashKey := hashString(key)
 	shardIdx := hashKey & mask
 	c.mu[shardIdx].Lock()
@@ -66,7 +63,7 @@ func (c *cache) Get(key string) (value interface{}) {
 	return c.shards[shardIdx].get(key)
 }
 
-func (c *cache) Take(key string) (value interface{}) {
+func (c *Cache[K Stringer, V any]) Take(key K) (value V) {
 	hashKey := hashString(key)
 	shardIdx := hashKey & mask
 	c.mu[shardIdx].Lock()
@@ -74,7 +71,7 @@ func (c *cache) Take(key string) (value interface{}) {
 	return c.shards[shardIdx].take(key)
 }
 
-func (c *cache) Del(key string) {
+func (c *Cache[K Stringer, V any]) Del(key K) {
 	hashKey := hashString(key)
 	shardIdx := hashKey & mask
 	c.mu[shardIdx].Lock()
